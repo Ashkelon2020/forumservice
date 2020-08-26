@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import lombok.Getter;
@@ -29,11 +30,13 @@ public class UserAccountServiceImpl implements UserAccountService {
 
 	@Getter
 	@Setter
-	private long period = 30;
+	@Value("${expdate.value}")
+	private long period;
 
 	@Getter
 	@Setter
-	private String defaultUser = "USER";
+	@Value("${default.role}")
+	private String defaultUser;
 
 	@Override
 	public UserAccountResponseDto addUser(UserRegisterDto userRegisterDto) {
