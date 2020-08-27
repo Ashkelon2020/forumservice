@@ -9,7 +9,7 @@ public interface UserAccountService {
 
 	UserAccountResponseDto addUser(UserRegisterDto userRegisterDto);
 
-	UserAccountResponseDto getUser(String login, String password);
+	UserAccountResponseDto getUser(String login);
 	
 	UserAccountResponseDto removeUser(String login);
 	

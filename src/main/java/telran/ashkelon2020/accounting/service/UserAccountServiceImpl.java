@@ -12,12 +12,11 @@ import org.springframework.stereotype.Service;
 
 import telran.ashkelon2020.accounting.dao.UserAccountRepository;
 import telran.ashkelon2020.accounting.dto.RolesResponseDto;
-import telran.ashkelon2020.accounting.dto.UnauthorizedException;
 import telran.ashkelon2020.accounting.dto.UserAccountResponseDto;
-import telran.ashkelon2020.accounting.dto.UserNotFoundException;
 import telran.ashkelon2020.accounting.dto.UserRegisterDto;
 import telran.ashkelon2020.accounting.dto.UserUpdateDto;
 import telran.ashkelon2020.accounting.dto.exceptions.UserExistsException;
+import telran.ashkelon2020.accounting.dto.exceptions.UserNotFoundException;
 import telran.ashkelon2020.accounting.model.UserAccount;
 
 @Service
@@ -69,11 +68,9 @@ public class UserAccountServiceImpl implements UserAccountService {
 	}
 
 	@Override
-	public UserAccountResponseDto getUser(String login, String password) {
-		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException(login));
-		if (!BCrypt.checkpw(password, userAccount.getPassword())) {
-			throw new UnauthorizedException();
-		}
+	public UserAccountResponseDto getUser(String login) {
+		UserAccount userAccount = repository.findById(login)
+				.orElseThrow(() -> new UserNotFoundException(login));
 		return modelMapper.map(userAccount, UserAccountResponseDto.class);
 	}
 

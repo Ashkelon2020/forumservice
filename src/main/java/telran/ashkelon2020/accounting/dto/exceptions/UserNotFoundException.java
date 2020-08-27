@@ -1,4 +1,4 @@
-package telran.ashkelon2020.accounting.dto;
+package telran.ashkelon2020.accounting.dto.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
