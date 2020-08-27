@@ -2,13 +2,14 @@ package telran.ashkelon2020.accounting.service;
 
 import java.time.LocalDateTime;
 
+import org.mindrot.jbcrypt.BCrypt;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedResource;
 import org.springframework.stereotype.Service;
 
-import lombok.Getter;
-import lombok.Setter;
 import telran.ashkelon2020.accounting.dao.UserAccountRepository;
 import telran.ashkelon2020.accounting.dto.RolesResponseDto;
 import telran.ashkelon2020.accounting.dto.UnauthorizedException;
@@ -20,6 +21,7 @@ import telran.ashkelon2020.accounting.dto.exceptions.UserExistsException;
 import telran.ashkelon2020.accounting.model.UserAccount;
 
 @Service
+@ManagedResource
 public class UserAccountServiceImpl implements UserAccountService {
 
 	@Autowired
@@ -28,24 +30,40 @@ public class UserAccountServiceImpl implements UserAccountService {
 	@Autowired
 	ModelMapper modelMapper;
 
-	@Getter
-	@Setter
 	@Value("${expdate.value}")
 	private long period;
 
-	@Getter
-	@Setter
 	@Value("${default.role}")
 	private String defaultUser;
+
+	@ManagedAttribute
+	public long getPeriod() {
+		return period;
+	}
+
+	@ManagedAttribute
+	public void setPeriod(long period) {
+		this.period = period;
+	}
+
+	public String getDefaultUser() {
+		return defaultUser;
+	}
+
+	public void setDefaultUser(String defaultUser) {
+		this.defaultUser = defaultUser;
+	}
 
 	@Override
 	public UserAccountResponseDto addUser(UserRegisterDto userRegisterDto) {
 		if (repository.existsById(userRegisterDto.getLogin())) {
 			throw new UserExistsException(userRegisterDto.getLogin());
 		}
+		String hashPassword = BCrypt.hashpw(userRegisterDto.getPassword(), BCrypt.gensalt());
 		UserAccount userAccount = modelMapper.map(userRegisterDto, UserAccount.class);
 		userAccount.setExpDate(LocalDateTime.now().plusDays(period));
 		userAccount.addRole(defaultUser.toUpperCase());
+		userAccount.setPassword(hashPassword);
 		repository.save(userAccount);
 		return modelMapper.map(userAccount, UserAccountResponseDto.class);
 	}
@@ -53,7 +71,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 	@Override
 	public UserAccountResponseDto getUser(String login, String password) {
 		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException(login));
-		if (!userAccount.getPassword().equals(password)) {
+		if (!BCrypt.checkpw(password, userAccount.getPassword())) {
 			throw new UnauthorizedException();
 		}
 		return modelMapper.map(userAccount, UserAccountResponseDto.class);
@@ -93,6 +111,15 @@ public class UserAccountServiceImpl implements UserAccountService {
 		}
 		
 		return modelMapper.map(userAccount, RolesResponseDto.class);
+	}
+
+	@Override
+	public void changePassword(String login, String password) {
+		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException(login));
+		String hashPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+		userAccount.setPassword(hashPassword);
+		userAccount.setExpDate(LocalDateTime.now().plusDays(period));
+		repository.save(userAccount);
 	}
 
 }
