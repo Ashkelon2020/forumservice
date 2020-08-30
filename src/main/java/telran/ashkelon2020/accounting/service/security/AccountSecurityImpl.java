@@ -28,7 +28,9 @@ public class AccountSecurityImpl implements AccountSecurity {
 		if (!BCrypt.checkpw(userLoginDto.getPassword(), userAccount.getPassword())) {
 			throw new UnauthorizedException();
 		}	
-		// FIXME check roles
+		if (userAccount.getRoles().isEmpty()) {
+			throw new ForbiddenException();
+		}
 		return userAccount.getLogin();
 	}
 
@@ -51,6 +53,13 @@ public class AccountSecurityImpl implements AccountSecurity {
 		} catch (Exception e) {
 			throw new UnauthorizedException();
 		}
+	}
+
+	@Override
+	public boolean checkHaveRole(String login, String role) {
+		UserAccount userAccount = repository.findById(login)
+				.orElseThrow(() -> new UserNotFoundException(login));
+		return userAccount.getRoles().contains(role);
 	}
 
 }
