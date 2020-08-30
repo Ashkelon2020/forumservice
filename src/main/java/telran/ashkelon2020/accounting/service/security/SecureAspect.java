@@ -1,6 +1,5 @@
 package telran.ashkelon2020.accounting.service.security;
 
-import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -24,8 +23,18 @@ public class SecureAspect {
 	}
 	
 	@Pointcut("execution(public * telran.ashkelon2020.accounting.controller.UserAccountController.*User(..))"
-			+ "&& args(token, login, ..)")
-	public void manipulateUser(String token, String login) {
+			+ " && args(login, token, ..)")
+	public void manipulateUser(String login, String token) {
+	}
+	
+	@Pointcut("execution(public * telran.ashkelon2020.accounting.controller.UserAccountController.*Role(..))"
+			+ " && args(..,token)")
+	public void manipulateRole(String token) {
+	}
+	
+	@Pointcut("@annotation(Authenticated)")
+	public void authenticated() {
+		
 	}
 
 	@Around("loginUser(token)")
@@ -37,13 +46,29 @@ public class SecureAspect {
 		return pjp.proceed(args);
 	}
 	
-	@Before("manipulateUser(token, login)")
-	public void checkTokenAndExpDateAndValidateUser(String token, String login){
+	@Before("manipulateUser(login, token)")
+	public void checkTokenAndExpDateAndValidateUser(String login, String token){
 		String user = securityService.getLogin(token);
 		securityService.checkExpDate(user);
 		if (!user.equals(login)) {
 			throw new ForbiddenException();
 		}
+	}
+	
+	@Before("manipulateRole(token)")
+	public void checkTokenAndValidateAdmin(String token){
+		String user = securityService.getLogin(token);
+		if (!securityService.checkHaveRole(user, "ADMINISTRATOR")) {
+			throw new ForbiddenException();
+		}
+	}
+	
+	@Around("authenticated()")
+	public Object checkAuthenticated(ProceedingJoinPoint pjp) throws Throwable {
+		Object[] args = pjp.getArgs();
+		String user = securityService.getLogin((String)args[0]);
+		args[args.length - 1] = user;
+		return pjp.proceed(args);
 	}
 
 }

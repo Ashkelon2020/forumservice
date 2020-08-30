@@ -14,9 +14,9 @@ import telran.ashkelon2020.accounting.dto.RolesResponseDto;
 import telran.ashkelon2020.accounting.dto.UserAccountResponseDto;
 import telran.ashkelon2020.accounting.dto.UserRegisterDto;
 import telran.ashkelon2020.accounting.dto.UserUpdateDto;
-import telran.ashkelon2020.accounting.dto.exceptions.ForbiddenException;
 import telran.ashkelon2020.accounting.service.UserAccountService;
 import telran.ashkelon2020.accounting.service.security.AccountSecurity;
+import telran.ashkelon2020.accounting.service.security.Authenticated;
 
 @RestController
 @RequestMapping("/account")
@@ -40,7 +40,7 @@ public class UserAccountController {
 
 	@PutMapping("/user/{login}")
 	public UserAccountResponseDto updateUser(@PathVariable String login,
-			@RequestBody UserUpdateDto userUpdateDto, @RequestHeader("Authorization") String token) {
+			 @RequestHeader("Authorization") String token, @RequestBody UserUpdateDto userUpdateDto) {
 		return accountService.editUser(login, userUpdateDto);
 	}
 
@@ -52,27 +52,19 @@ public class UserAccountController {
 	@PutMapping("user/{login}/role/{role}")
 	public RolesResponseDto addRole(@PathVariable String login, @PathVariable String role, 
 			@RequestHeader("Authorization") String token) {
-		String user = securityService.getLogin(token);
-		if (!securityService.checkHaveRole(user, "ADMINISTRATOR")) {
-			throw new ForbiddenException();
-		}
 		return accountService.changeRolesList(login, role, true);
 	}
 
 	@DeleteMapping("user/{login}/role/{role}")
 	public RolesResponseDto removeRole(@PathVariable String login, @PathVariable String role, 
 			@RequestHeader("Authorization") String token) {
-		String user = securityService.getLogin(token);
-		if (!securityService.checkHaveRole(user, "ADMINISTRATOR")) {
-			throw new ForbiddenException();
-		}
 		return accountService.changeRolesList(login, role, false);
 	}
 
 	@PutMapping("/user/password")
+	@Authenticated
 	public void changePassword(@RequestHeader("Authorization") String token,
-			@RequestHeader("X-Password") String newPassword) {
-		String user = securityService.getLogin(token);
+			@RequestHeader("X-Password") String newPassword, String user) {
 		accountService.changePassword(user, newPassword);
 	}
 
